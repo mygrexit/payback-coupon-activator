@@ -1,6 +1,6 @@
 # payback-coupon-activator
 
-A small self-hosted daemon that activates every pending coupon in your Payback account once a day, and notifies you when it needs attention.
+A small self-hosted daemon that activates every pending coupon in your Payback account once or several times a day, and notifies you when it needs attention.
 
 > **Unofficial project, not affiliated with PAYBACK GmbH.** It drives the payback.de website with a headless browser. Payback can change the site at any time and break this tool. Use it at your own risk and check Payback's terms of use.
 
@@ -9,7 +9,7 @@ A small self-hosted daemon that activates every pending coupon in your Payback a
 ## How it works
 
 1. You log in on payback.de in your normal browser and export the cookies to `data/cookies.json`.
-2. Every day at `RUN_AT`, the daemon does the following:
+2. At every time listed in `RUN_AT` (default: once a day at 04:00), the daemon does the following:
    - loads those cookies into headless Chromium
    - opens `https://www.payback.de/coupons`
    - clicks every button in the "not activated" section, one at a time
@@ -27,7 +27,9 @@ The tool never types your password and never solves or bypasses CAPTCHAs or bot 
 
 Older tools such as [theodm/python-coupons](https://github.com/theodm/python-coupons) used the app API at `services-ext.payback.de`. As of October 2026, its login endpoint (`/json/secureauthenticate`) sits behind an Imperva bot challenge that plain HTTP clients can't pass. That API also needs app credentials that are extracted from the Payback app.
 
-## Setup (Docker Compose)
+## Setup
+
+### Docker Compose
 
 ```sh
 git clone https://github.com/mygrexit/payback-coupon-activator.git
@@ -41,6 +43,12 @@ docker compose up -d --build
 ```
 
 The image is built for amd64 and arm64 (e.g. Raspberry Pi). It includes Chromium, so expect roughly 300–400 MB. The Docker setup has not been tested on real hardware yet. If something breaks, please open an issue.
+
+Instead of building locally you can use the prebuilt image `ghcr.io/mygrexit/payback-coupon-activator:latest`.
+
+### Unraid
+
+The app is available in **Community Applications**: search for *payback-coupon-activator*. Put the exported `cookies.json` into the data folder (default `/mnt/user/appdata/payback-coupon-activator`). The container runs as `nobody:users` (99:100), so the file has to be readable and writable by that user.
 
 ### Exporting the cookies
 
@@ -60,7 +68,7 @@ The cookie file gives full access to your Payback account. Treat it like a passw
 | `NOTIFY_URL` | *(empty)* | A [shoutrrr](https://github.com/nicholas-fedor/shoutrrr) URL. Empty means no notifications. |
 | `NOTIFY_ON_SUCCESS` | `false` | Also notify after successful runs. |
 | `TZ` | `Europe/Berlin` | Time zone for `RUN_AT`. |
-| `RUN_AT` | `04:00` | Daily run time (HH:MM, 24h). It is DST-aware. |
+| `RUN_AT` | `04:00` | Daily run time(s) as `HH:MM` (24h). Separate several times with commas, e.g. `04:00,12:00,19:00`. DST-aware. |
 | `RUN_ON_START` | `true` | Run once right after the container starts. |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`. |
 | `BROWSER_USER_AGENT` | *(Chromium default)* | User-Agent to send. Set it to the one of the browser the cookies came from. |
@@ -77,6 +85,8 @@ ntfy://ntfy.sh/YOUR_TOPIC
 ```
 
 Credentials, cookie values and the notify URL are never logged.
+
+**Several runs per day:** Payback sometimes adds coupons during the day, so a second or third run can catch them earlier. Each run opens payback.de once, so keep the list short (two or three times a day is plenty). More runs mean more traffic that could trigger a bot check.
 
 ## Usage
 
@@ -132,8 +142,12 @@ Layout:
 | `internal/activator` | Headless browser run. Every payback.de-specific selector is in `selectors.go`. |
 | `internal/cookies` | Cookie import and export |
 | `internal/notify` | shoutrrr wrapper with secret redaction |
-| `internal/scheduler` | DST-safe daily scheduling |
+| `internal/scheduler` | DST-safe scheduling at one or more times per day |
 | `internal/config` | Environment configuration |
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

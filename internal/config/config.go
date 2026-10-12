@@ -7,11 +7,14 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	_ "time/tzdata" // embed zone data so TZ works in minimal images
+
+	"github.com/mygrexit/payback-coupon-activator/internal/scheduler"
 )
 
 const (
@@ -27,8 +30,7 @@ type Config struct {
 	NotifyURL       string // secret: may contain tokens
 	NotifyOnSuccess bool
 	Location        *time.Location
-	RunHour         int
-	RunMinute       int
+	RunAt           []scheduler.Clock // sorted, without duplicates, never empty
 	RunOnStart      bool
 	LogLevel        slog.Level
 	ChromePath      string
@@ -44,7 +46,7 @@ func (c Config) LogValue() slog.Value {
 		slog.Bool("notify_configured", c.NotifyURL != ""),
 		slog.Bool("notify_on_success", c.NotifyOnSuccess),
 		slog.String("tz", c.Location.String()),
-		slog.String("run_at", fmt.Sprintf("%02d:%02d", c.RunHour, c.RunMinute)),
+		slog.String("run_at", formatClocks(c.RunAt)),
 		slog.Bool("run_on_start", c.RunOnStart),
 		slog.String("log_level", c.LogLevel.String()),
 	)
@@ -88,11 +90,10 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	cfg.Location = loc
 
-	h, m, err := ParseClock(get("RUN_AT", DefaultRunAt))
+	cfg.RunAt, err = ParseRunAt(get("RUN_AT", DefaultRunAt))
 	if err != nil {
 		errs = append(errs, fmt.Errorf("RUN_AT: %w", err))
 	}
-	cfg.RunHour, cfg.RunMinute = h, m
 
 	if err := cfg.LogLevel.UnmarshalText([]byte(get("LOG_LEVEL", "info"))); err != nil {
 		errs = append(errs, errors.New("LOG_LEVEL must be one of debug, info, warn, error"))
@@ -106,6 +107,31 @@ func Load(getenv func(string) string) (Config, error) {
 		return Config{}, fmt.Errorf("invalid configuration: %w", errors.Join(errs...))
 	}
 	return cfg, nil
+}
+
+// ParseRunAt parses a comma-separated list of "HH:MM" times, e.g.
+// "04:00,12:00,19:00". The result is sorted and free of duplicates.
+func ParseRunAt(s string) ([]scheduler.Clock, error) {
+	var times []scheduler.Clock
+	for part := range strings.SplitSeq(s, ",") {
+		h, m, err := ParseClock(strings.TrimSpace(part))
+		if err != nil {
+			return nil, errors.New("must be one or more HH:MM times in 24h format, separated by commas, e.g. 04:00 or 04:00,12:00,19:00")
+		}
+		times = append(times, scheduler.Clock{Hour: h, Minute: m})
+	}
+	slices.SortFunc(times, func(a, b scheduler.Clock) int {
+		return (a.Hour*60 + a.Minute) - (b.Hour*60 + b.Minute)
+	})
+	return slices.Compact(times), nil
+}
+
+func formatClocks(times []scheduler.Clock) string {
+	parts := make([]string, len(times))
+	for i, c := range times {
+		parts[i] = c.String()
+	}
+	return strings.Join(parts, ",")
 }
 
 // ParseClock parses "HH:MM" (24h).

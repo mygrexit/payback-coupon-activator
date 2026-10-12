@@ -39,7 +39,7 @@ func TestNextRun(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NextRun(tt.now, tt.hour, tt.min, berlin)
+			got := NextRun(tt.now, []Clock{{tt.hour, tt.min}}, berlin)
 			if s := got.In(berlin).Format(time.RFC3339); s != tt.want {
 				t.Errorf("NextRun = %s, want %s", s, tt.want)
 			}
@@ -54,12 +54,42 @@ func TestNextRunFallBackDuration(t *testing.T) {
 	berlin, _ := time.LoadLocation("Europe/Berlin")
 	// From 04:00 on the day before the fall-back to 04:00 after it is 25h.
 	start := time.Date(2026, 10, 24, 4, 0, 0, 0, berlin)
-	if d := NextRun(start, 4, 0, berlin).Sub(start); d != 25*time.Hour {
+	if d := NextRun(start, []Clock{{4, 0}}, berlin).Sub(start); d != 25*time.Hour {
 		t.Errorf("duration = %v, want 25h", d)
 	}
 	// Spring forward: 23h.
 	start = time.Date(2026, 3, 28, 4, 0, 0, 0, berlin)
-	if d := NextRun(start, 4, 0, berlin).Sub(start); d != 23*time.Hour {
+	if d := NextRun(start, []Clock{{4, 0}}, berlin).Sub(start); d != 23*time.Hour {
 		t.Errorf("duration = %v, want 23h", d)
+	}
+}
+
+func TestNextRunMultipleTimes(t *testing.T) {
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	times := []Clock{{4, 0}, {12, 0}, {19, 0}}
+
+	tests := []struct {
+		now  time.Time
+		want string
+	}{
+		{time.Date(2026, 6, 10, 3, 0, 0, 0, berlin), "2026-06-10T04:00:00+02:00"},
+		{time.Date(2026, 6, 10, 4, 0, 0, 0, berlin), "2026-06-10T12:00:00+02:00"},
+		{time.Date(2026, 6, 10, 12, 30, 0, 0, berlin), "2026-06-10T19:00:00+02:00"},
+		{time.Date(2026, 6, 10, 19, 0, 0, 0, berlin), "2026-06-11T04:00:00+02:00"},
+	}
+	for _, tt := range tests {
+		if got := NextRun(tt.now, times, berlin).Format(time.RFC3339); got != tt.want {
+			t.Errorf("NextRun(%s) = %s, want %s", tt.now.Format(time.RFC3339), got, tt.want)
+		}
+	}
+
+	// The order of times does not matter.
+	now := time.Date(2026, 6, 10, 13, 0, 0, 0, berlin)
+	if got := NextRun(now, []Clock{{19, 0}, {4, 0}, {12, 0}}, berlin).Format(time.RFC3339); got != "2026-06-10T19:00:00+02:00" {
+		t.Errorf("unsorted times: NextRun = %s", got)
+	}
+
+	if got := NextRun(now, nil, berlin); !got.IsZero() {
+		t.Errorf("no times: NextRun = %v, want zero", got)
 	}
 }

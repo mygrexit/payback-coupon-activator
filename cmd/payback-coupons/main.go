@@ -1,5 +1,5 @@
-// Command payback-coupons activates all pending Payback coupons once per
-// day using an exported payback.de browser session.
+// Command payback-coupons activates all pending Payback coupons at one or
+// more fixed times per day using an exported payback.de browser session.
 package main
 
 import (
@@ -91,7 +91,7 @@ func run() int {
 	if cfg.RunOnStart {
 		job(ctx)
 	}
-	scheduler.Run(ctx, cfg.RunHour, cfg.RunMinute, cfg.Location, log, func(ctx context.Context) { job(ctx) })
+	scheduler.Run(ctx, cfg.RunAt, cfg.Location, log, func(ctx context.Context) { job(ctx) })
 	log.Info("Shutting down")
 	return 0
 }

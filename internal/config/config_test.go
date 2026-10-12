@@ -4,8 +4,11 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
+
+	"github.com/mygrexit/payback-coupon-activator/internal/scheduler"
 )
 
 func envFrom(m map[string]string) func(string) string {
@@ -26,8 +29,8 @@ func TestLoadDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Location.String() != "Europe/Berlin" || cfg.RunHour != 4 || cfg.RunMinute != 0 {
-		t.Errorf("unexpected schedule defaults: %v %d:%d", cfg.Location, cfg.RunHour, cfg.RunMinute)
+	if cfg.Location.String() != "Europe/Berlin" || !slices.Equal(cfg.RunAt, []scheduler.Clock{{Hour: 4}}) {
+		t.Errorf("unexpected schedule defaults: %v %v", cfg.Location, cfg.RunAt)
 	}
 	if !cfg.RunOnStart || cfg.NotifyOnSuccess || cfg.LogLevel != slog.LevelInfo {
 		t.Errorf("unexpected flag defaults: %+v", cfg)
@@ -49,7 +52,7 @@ func TestLoadCustom(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.RunHour != 23 || cfg.RunMinute != 45 || cfg.RunOnStart || !cfg.NotifyOnSuccess || cfg.LogLevel != slog.LevelDebug {
+	if !slices.Equal(cfg.RunAt, []scheduler.Clock{{Hour: 23, Minute: 45}}) || cfg.RunOnStart || !cfg.NotifyOnSuccess || cfg.LogLevel != slog.LevelDebug {
 		t.Errorf("unexpected config: %+v", cfg)
 	}
 }
@@ -84,6 +87,26 @@ func TestErrorsAndLogValueDoNotLeakSecrets(t *testing.T) {
 	}
 	if s := cfg.LogValue().String(); strings.Contains(s, "SUPERSECRET") {
 		t.Errorf("LogValue leaks secret: %s", s)
+	}
+}
+
+func TestParseRunAt(t *testing.T) {
+	got, err := ParseRunAt(" 19:00, 4:00 ,12:00,04:00")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []scheduler.Clock{{Hour: 4}, {Hour: 12}, {Hour: 19}}
+	if !slices.Equal(got, want) {
+		t.Errorf("ParseRunAt = %v, want %v", got, want)
+	}
+	if s := formatClocks(got); s != "04:00,12:00,19:00" {
+		t.Errorf("formatClocks = %q", s)
+	}
+
+	for _, in := range []string{"", ",", "04:00,", "04:00,,12:00", "04:00;12:00", "04:00,25:00", "6h"} {
+		if _, err := ParseRunAt(in); err == nil {
+			t.Errorf("ParseRunAt(%q) succeeded, want error", in)
+		}
 	}
 }
 
