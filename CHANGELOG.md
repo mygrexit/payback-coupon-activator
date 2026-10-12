@@ -4,13 +4,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/).
 
-## [0.2.0] - Unreleased
+## [Unreleased]
+
+## [0.2.0] - 2026-10-12
 
 ### Added
 
 - `RUN_AT` accepts several times separated by commas, e.g. `04:00,12:00,19:00`. Each time is DST-aware. A single time such as `04:00` works as before.
 - Unraid setup section in the README.
-- This changelog.
+- This changelog, `CONTRIBUTING.md` and a pull request template.
+- CI for pull requests: gofmt, `go vet`, tests (including browser tests) and a Docker build for amd64 and arm64.
 
 ### Changed
 
@@ -24,5 +27,6 @@ and this project uses [Semantic Versioning](https://semver.org/).
 - Notifications through shoutrrr when the session expires, a bot check appears, the page layout changes or coupons can't be activated.
 - Docker image for amd64 and arm64, published to `ghcr.io/mygrexit/payback-coupon-activator`.
 
-[0.2.0]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mygrexit/payback-coupon-activator/releases/tag/v0.1.0

@@ -200,11 +200,11 @@ func setup(t *testing.T, cookieValue string) (*fakePayback, *httptest.Server, st
 
 func testOpts(t *testing.T, url, cookieFile string) Options {
 	return Options{
-		CouponsURL:   url,
-		CookiesFile:  cookieFile,
-		ChromePath:   findChrome(t),
-		NoSandbox:    os.Getenv("CI") != "",
-		Logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
+		CouponsURL:     url,
+		CookiesFile:    cookieFile,
+		ChromePath:     findChrome(t),
+		NoSandbox:      os.Getenv("CI") != "",
+		Logger:         slog.New(slog.NewTextHandler(io.Discard, nil)),
 		RunTimeout:     90 * time.Second,
 		PageTimeout:    3 * time.Second,
 		ClickDelay:     150 * time.Millisecond,

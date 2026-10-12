@@ -145,6 +145,10 @@ Layout:
 | `internal/scheduler` | DST-safe scheduling at one or more times per day |
 | `internal/config` | Environment configuration |
 
+## Contributing
+
+Pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), and never post cookies, screenshots or logs from your account.
+
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md).
