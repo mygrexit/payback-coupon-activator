@@ -67,7 +67,7 @@ The cookie file gives full access to your Payback account. Treat it like a passw
 | `COOKIES_FILE` | `/data/cookies.json` | Exported cookies (Cookie-Editor JSON or Netscape format). It is rewritten with refreshed cookies after successful runs. |
 | `NOTIFY_URL` | *(empty)* | A [shoutrrr](https://github.com/nicholas-fedor/shoutrrr) URL. Empty means no notifications. |
 | `NOTIFY_ON_SUCCESS` | `false` | Also notify after successful runs. |
-| `NOTIFY_FAILED_ABOVE` | `0` | Only report a finished run when more than this many coupons stayed unactivated (failed or still pending). Errors such as an expired session and unsaved cookies are always reported. |
+| `NOTIFY_FAILED_ABOVE` | `0` | Only report a finished run when more than this many coupons are still not activated afterwards. Coupons that need a code stay pending every day, so set this above that number, e.g. `10`. Errors such as an expired session and unsaved cookies are always reported. |
 | `TZ` | `Europe/Berlin` | Time zone for `RUN_AT`. |
 | `RUN_AT` | `04:00` | Daily run time(s) as `HH:MM` (24h). Separate several times with commas, e.g. `04:00,12:00,19:00`. DST-aware. |
 | `RUN_ON_START` | `true` | Run once right after the container starts. |

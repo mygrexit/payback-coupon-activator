@@ -124,10 +124,7 @@ func activate(ctx context.Context, opts activator.Options, cfg config.Config, n 
 	if !sum.CookiesSaved {
 		msg += fmt.Sprintf(". Refreshed cookies could not be saved to %s – check that the directory is writable, or the session will expire", cfg.CookiesFile)
 	}
-	// A few coupons that need a code fail every day; only report when more
-	// than NOTIFY_FAILED_ABOVE stay unactivated. Unsaved cookies always count.
-	report := sum.Failed+sum.Remaining > cfg.NotifyFailedAbove || !sum.CookiesSaved
-	if report || cfg.NotifyOnSuccess {
+	if worthReporting(sum, cfg.NotifyFailedAbove) || cfg.NotifyOnSuccess {
 		prefix := "✅ Payback coupons: "
 		if problem {
 			prefix = "⚠️ Payback coupons: "
@@ -135,6 +132,19 @@ func activate(ctx context.Context, opts activator.Options, cfg config.Config, n 
 		send(n, log, prefix+msg)
 	}
 	return !problem
+}
+
+// worthReporting reports whether a finished run needs the user's attention:
+// more than failedAbove coupons are still not activated, or the refreshed
+// cookies could not be saved.
+//
+// Only Remaining is counted: a coupon that could not be activated is in
+// both Failed and Remaining, and one that is in Failed only was activated
+// after all. Coupons that need a code stay pending on every run, so a
+// threshold above that baseline keeps them quiet; if clicking breaks
+// completely, the unactivated coupons pile up across runs and cross it.
+func worthReporting(sum activator.Summary, failedAbove int) bool {
+	return sum.Remaining > failedAbove || !sum.CookiesSaved
 }
 
 func failureMessage(err error, cookiesFile string) string {
