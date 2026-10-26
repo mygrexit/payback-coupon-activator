@@ -97,7 +97,7 @@ func run() int {
 }
 
 // activate runs one cycle, logs the result and sends notifications.
-// It reports whether the run was free of problems.
+// It reports whether the run needs no attention (see needsAttention).
 func activate(ctx context.Context, opts activator.Options, cfg config.Config, n *notify.Notifier, log *slog.Logger) bool {
 	log.Info("Starting Payback coupon activation")
 	start := time.Now()
@@ -120,31 +120,32 @@ func activate(ctx context.Context, opts activator.Options, cfg config.Config, n 
 	msg := fmt.Sprintf("Activation finished: %d activated, %d failed, %d still pending", sum.Activated, sum.Failed, sum.Remaining)
 	log.Info(msg, "duration", time.Since(start).Round(time.Second))
 
-	problem := sum.Failed > 0 || sum.Remaining > 0 || !sum.CookiesSaved
+	attention := needsAttention(sum, cfg.NotifyFailedAbove)
 	if !sum.CookiesSaved {
 		msg += fmt.Sprintf(". Refreshed cookies could not be saved to %s – check that the directory is writable, or the session will expire", cfg.CookiesFile)
 	}
-	if worthReporting(sum, cfg.NotifyFailedAbove) || cfg.NotifyOnSuccess {
+	if attention || cfg.NotifyOnSuccess {
 		prefix := "✅ Payback coupons: "
-		if problem {
+		if attention {
 			prefix = "⚠️ Payback coupons: "
 		}
 		send(n, log, prefix+msg)
 	}
-	return !problem
+	return !attention
 }
 
-// worthReporting reports whether a finished run needs the user's attention:
-// more than failedAbove coupons are still not activated, or the refreshed
-// cookies could not be saved.
+// needsAttention reports whether a finished run needs the user's attention:
+// more than failedAbove coupons could not be activated, or the refreshed
+// cookies could not be saved. It decides the ⚠️ notification and the
+// --once exit code.
 //
-// Only Remaining is counted: a coupon that could not be activated is in
-// both Failed and Remaining, and one that is in Failed only was activated
-// after all. Coupons that need a code stay pending on every run, so a
-// threshold above that baseline keeps them quiet; if clicking breaks
-// completely, the unactivated coupons pile up across runs and cross it.
-func worthReporting(sum activator.Summary, failedAbove int) bool {
-	return sum.Remaining > failedAbove || !sum.CookiesSaved
+// A coupon that could not be activated is usually counted in both Failed
+// (clicked, never confirmed) and Remaining (still pending after the final
+// reload), so the larger of the two is used instead of their sum. With
+// failedAbove 0, any failed or still pending coupon counts, as before the
+// threshold existed.
+func needsAttention(sum activator.Summary, failedAbove int) bool {
+	return max(sum.Failed, sum.Remaining) > failedAbove || !sum.CookiesSaved
 }
 
 func failureMessage(err error, cookiesFile string) string {

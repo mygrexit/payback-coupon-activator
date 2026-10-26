@@ -8,7 +8,11 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- `NOTIFY_FAILED_ABOVE`: only report a finished run when more than this many coupons are still not activated afterwards (default `0`, the previous behaviour). Errors and unsaved cookies are always reported.
+- `NOTIFY_FAILED_ABOVE`: only report a finished run when more than this many coupons could not be activated (default `0`, the previous behaviour). Errors and unsaved cookies are always reported. The threshold also applies to the `--once` exit code.
+
+### Fixed
+
+- README: coupons that need a code are skipped and never counted. The README said they show up as failed.
 
 ## [0.2.0] - 2026-10-12
 

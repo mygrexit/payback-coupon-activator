@@ -19,7 +19,7 @@ A small self-hosted daemon that activates every pending coupon in your Payback a
    - **Session expired:** log in again and re-export the cookies
    - **Bot check shown:** the run is skipped
    - **Page layout changed:** the selectors need an update
-   - **Coupons could not be activated:** for example, coupons that need a code
+   - **Coupons could not be activated:** the click did not work, or the coupon was still pending afterwards. Use `NOTIFY_FAILED_ABOVE` to ignore a few of them.
 
 The tool never types your password and never solves or bypasses CAPTCHAs or bot checks. When a person is needed, it stops and tells you.
 
@@ -67,7 +67,7 @@ The cookie file gives full access to your Payback account. Treat it like a passw
 | `COOKIES_FILE` | `/data/cookies.json` | Exported cookies (Cookie-Editor JSON or Netscape format). It is rewritten with refreshed cookies after successful runs. |
 | `NOTIFY_URL` | *(empty)* | A [shoutrrr](https://github.com/nicholas-fedor/shoutrrr) URL. Empty means no notifications. |
 | `NOTIFY_ON_SUCCESS` | `false` | Also notify after successful runs. |
-| `NOTIFY_FAILED_ABOVE` | `0` | Only report a finished run when more than this many coupons are still not activated afterwards. Coupons that need a code stay pending every day, so set this above that number, e.g. `10`. Errors such as an expired session and unsaved cookies are always reported. |
+| `NOTIFY_FAILED_ABOVE` | `0` | Only report a finished run when more than this many coupons could not be activated, e.g. `10` to ignore a few occasional failures. `0` reports every one. Errors such as an expired session, a bot check or unsaved cookies are always reported. Also applies to the `--once` exit code. |
 | `TZ` | `Europe/Berlin` | Time zone for `RUN_AT`. |
 | `RUN_AT` | `04:00` | Daily run time(s) as `HH:MM` (24h). Separate several times with commas, e.g. `04:00,12:00,19:00`. DST-aware. |
 | `RUN_ON_START` | `true` | Run once right after the container starts. |
@@ -117,7 +117,7 @@ go build -o payback-coupons ./cmd/payback-coupons
 COOKIES_FILE=./data/cookies.json ./payback-coupons --once
 ```
 
-`--once` exits with `0` on success, `1` if anything needs attention and `2` on invalid configuration. That makes it usable from cron or systemd timers.
+`--once` exits with `0` on success, `1` if anything needs attention (respecting `NOTIFY_FAILED_ABOVE`) and `2` on invalid configuration. That makes it usable from cron or systemd timers.
 
 ## Troubleshooting
 
@@ -127,7 +127,7 @@ COOKIES_FILE=./data/cookies.json ./payback-coupons --once
 | **Bot check** | Payback or its CDN asked for human verification. The run is skipped and retried the next day. If it keeps happening, export fresh cookies and set `BROWSER_USER_AGENT`. The tool will not try to get around it. |
 | **Page not recognized** | Payback probably changed the website. Run `--once --debug-snapshot`, look at `data/debug.png`, and adjust the selectors in `internal/activator/selectors.go`. **Delete `debug.png` afterwards: it shows your account data.** |
 | **Refreshed cookies could not be saved** / **permission denied** | `./data` or `cookies.json` isn't writable by the container user. Set `PUID`/`PGID` in `.env` to the owner of `./data` (`id -u`, `id -g`). |
-| **Coupons not activated / still pending** | Some offers can't be activated with a click (e.g. they need a code). They are reported but don't stop the run. |
+| **Coupons not activated / still pending** | Clicking did not activate some coupons. They are reported but don't stop the run, and the next run tries again. Coupons that need a code ("Zur Code-Eingabe") are skipped and never counted. To ignore a few failures, set `NOTIFY_FAILED_ABOVE`. |
 
 ## Development
 

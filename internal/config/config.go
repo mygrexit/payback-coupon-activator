@@ -29,8 +29,8 @@ type Config struct {
 	CookiesFile     string
 	NotifyURL       string // secret: may contain tokens
 	NotifyOnSuccess bool
-	// NotifyFailedAbove: a finished run is only reported when more than this
-	// many coupons are still not activated afterwards. 0 reports every one.
+	// NotifyFailedAbove: a finished run only needs attention when more than
+	// this many coupons could not be activated. 0 counts every one.
 	NotifyFailedAbove int
 	Location          *time.Location
 	RunAt             []scheduler.Clock // sorted, without duplicates, never empty
