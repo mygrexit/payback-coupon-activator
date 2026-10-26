@@ -29,14 +29,17 @@ type Config struct {
 	CookiesFile     string
 	NotifyURL       string // secret: may contain tokens
 	NotifyOnSuccess bool
-	Location        *time.Location
-	RunAt           []scheduler.Clock // sorted, without duplicates, never empty
-	RunOnStart      bool
-	LogLevel        slog.Level
-	ChromePath      string
-	NoSandbox       bool
-	UserAgent       string
-	CouponsURL      string
+	// NotifyFailedAbove: a run is only reported when more than this many
+	// coupons stayed unactivated (failed + still pending). 0 reports every one.
+	NotifyFailedAbove int
+	Location          *time.Location
+	RunAt             []scheduler.Clock // sorted, without duplicates, never empty
+	RunOnStart        bool
+	LogLevel          slog.Level
+	ChromePath        string
+	NoSandbox         bool
+	UserAgent         string
+	CouponsURL        string
 }
 
 // LogValue implements slog.LogValuer and never exposes secrets.
@@ -45,6 +48,7 @@ func (c Config) LogValue() slog.Value {
 		slog.String("cookies_file", c.CookiesFile),
 		slog.Bool("notify_configured", c.NotifyURL != ""),
 		slog.Bool("notify_on_success", c.NotifyOnSuccess),
+		slog.Int("notify_failed_above", c.NotifyFailedAbove),
 		slog.String("tz", c.Location.String()),
 		slog.String("run_at", formatClocks(c.RunAt)),
 		slog.Bool("run_on_start", c.RunOnStart),
@@ -72,15 +76,25 @@ func Load(getenv func(string) string) (Config, error) {
 		return v
 	}
 
+	parseCount := func(key string, def int) int {
+		raw := get(key, strconv.Itoa(def))
+		v, err := strconv.Atoi(raw)
+		if err != nil || v < 0 {
+			errs = append(errs, fmt.Errorf("%s must be a whole number >= 0", key))
+		}
+		return v
+	}
+
 	cfg := Config{
-		CookiesFile:     get("COOKIES_FILE", DefaultCookiesFile),
-		NotifyURL:       get("NOTIFY_URL", ""),
-		NotifyOnSuccess: parseBool("NOTIFY_ON_SUCCESS", false),
-		RunOnStart:      parseBool("RUN_ON_START", true),
-		ChromePath:      get("CHROME_PATH", ""),
-		NoSandbox:       parseBool("CHROME_NO_SANDBOX", false),
-		UserAgent:       get("BROWSER_USER_AGENT", ""),
-		CouponsURL:      get("PAYBACK_COUPONS_URL", DefaultCouponsURL),
+		CookiesFile:       get("COOKIES_FILE", DefaultCookiesFile),
+		NotifyURL:         get("NOTIFY_URL", ""),
+		NotifyOnSuccess:   parseBool("NOTIFY_ON_SUCCESS", false),
+		NotifyFailedAbove: parseCount("NOTIFY_FAILED_ABOVE", 0),
+		RunOnStart:        parseBool("RUN_ON_START", true),
+		ChromePath:        get("CHROME_PATH", ""),
+		NoSandbox:         parseBool("CHROME_NO_SANDBOX", false),
+		UserAgent:         get("BROWSER_USER_AGENT", ""),
+		CouponsURL:        get("PAYBACK_COUPONS_URL", DefaultCouponsURL),
 	}
 
 	loc, err := time.LoadLocation(get("TZ", DefaultTZ))

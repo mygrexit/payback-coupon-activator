@@ -35,6 +35,9 @@ func TestLoadDefaults(t *testing.T) {
 	if !cfg.RunOnStart || cfg.NotifyOnSuccess || cfg.LogLevel != slog.LevelInfo {
 		t.Errorf("unexpected flag defaults: %+v", cfg)
 	}
+	if cfg.NotifyFailedAbove != 0 {
+		t.Errorf("NotifyFailedAbove = %d", cfg.NotifyFailedAbove)
+	}
 	if cfg.CouponsURL != DefaultCouponsURL {
 		t.Errorf("CouponsURL = %q", cfg.CouponsURL)
 	}
@@ -42,32 +45,34 @@ func TestLoadDefaults(t *testing.T) {
 
 func TestLoadCustom(t *testing.T) {
 	cfg, err := Load(envFrom(map[string]string{
-		"COOKIES_FILE":      cookieFile(t),
-		"TZ":                "UTC",
-		"RUN_AT":            "23:45",
-		"RUN_ON_START":      "false",
-		"NOTIFY_ON_SUCCESS": "true",
-		"LOG_LEVEL":         "debug",
+		"COOKIES_FILE":        cookieFile(t),
+		"TZ":                  "UTC",
+		"RUN_AT":              "23:45",
+		"RUN_ON_START":        "false",
+		"NOTIFY_ON_SUCCESS":   "true",
+		"NOTIFY_FAILED_ABOVE": "15",
+		"LOG_LEVEL":           "debug",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(cfg.RunAt, []scheduler.Clock{{Hour: 23, Minute: 45}}) || cfg.RunOnStart || !cfg.NotifyOnSuccess || cfg.LogLevel != slog.LevelDebug {
+	if !slices.Equal(cfg.RunAt, []scheduler.Clock{{Hour: 23, Minute: 45}}) || cfg.RunOnStart || !cfg.NotifyOnSuccess || cfg.NotifyFailedAbove != 15 || cfg.LogLevel != slog.LevelDebug {
 		t.Errorf("unexpected config: %+v", cfg)
 	}
 }
 
 func TestLoadReportsAllErrors(t *testing.T) {
 	_, err := Load(envFrom(map[string]string{
-		"TZ":           "Mars/Olympus",
-		"RUN_AT":       "25:00",
-		"RUN_ON_START": "maybe",
-		"LOG_LEVEL":    "loud",
+		"TZ":                  "Mars/Olympus",
+		"RUN_AT":              "25:00",
+		"RUN_ON_START":        "maybe",
+		"LOG_LEVEL":           "loud",
+		"NOTIFY_FAILED_ABOVE": "-1",
 	}))
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	for _, want := range []string{"TZ", "RUN_AT", "RUN_ON_START", "LOG_LEVEL"} {
+	for _, want := range []string{"TZ", "RUN_AT", "RUN_ON_START", "LOG_LEVEL", "NOTIFY_FAILED_ABOVE"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error does not mention %s: %v", want, err)
 		}

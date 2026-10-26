@@ -124,7 +124,10 @@ func activate(ctx context.Context, opts activator.Options, cfg config.Config, n 
 	if !sum.CookiesSaved {
 		msg += fmt.Sprintf(". Refreshed cookies could not be saved to %s – check that the directory is writable, or the session will expire", cfg.CookiesFile)
 	}
-	if problem || cfg.NotifyOnSuccess {
+	// A few coupons that need a code fail every day; only report when more
+	// than NOTIFY_FAILED_ABOVE stay unactivated. Unsaved cookies always count.
+	report := sum.Failed+sum.Remaining > cfg.NotifyFailedAbove || !sum.CookiesSaved
+	if report || cfg.NotifyOnSuccess {
 		prefix := "✅ Payback coupons: "
 		if problem {
 			prefix = "⚠️ Payback coupons: "
