@@ -6,6 +6,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-26
+
 ### Added
 
 - `NOTIFY_FAILED_ABOVE`: only report a finished run when more than this many coupons could not be activated (default `0`, the previous behaviour). Errors and unsaved cookies are always reported. The threshold also applies to the `--once` exit code.
@@ -35,6 +37,7 @@ and this project uses [Semantic Versioning](https://semver.org/).
 - Notifications through shoutrrr when the session expires, a bot check appears, the page layout changes or coupons can't be activated.
 - Docker image for amd64 and arm64, published to `ghcr.io/mygrexit/payback-coupon-activator`.
 
-[Unreleased]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mygrexit/payback-coupon-activator/releases/tag/v0.1.0
