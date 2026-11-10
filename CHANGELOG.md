@@ -6,6 +6,10 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Every run failed with "session missing or expired" since payback.de's header redesign on 2026-11-10. The header no longer shows an "Abmelden" link, so a logged-in session is now detected by the points balance.
+
 ## [0.3.0] - 2026-10-26
 
 ### Added

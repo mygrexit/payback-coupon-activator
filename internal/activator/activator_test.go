@@ -126,10 +126,11 @@ func (f *fakePayback) handler() http.Handler {
 	return mux
 }
 
-// couponPageHTML mirrors the structure of the real page (2026-10-10):
-// test IDs carry the coupon ID, activated coupons leave the
-// not-activated section, code coupons have no "-not_activated" button.
-const couponPageHTML = `<!doctype html><html><body><header><a href="/logout">Abmelden</a></header><main id="app">loading…</main><script>
+// couponPageHTML mirrors the structure of the real page (2026-10-10,
+// header 2026-11-10): test IDs carry the coupon ID, activated coupons
+// leave the not-activated section, code coupons have no "-not_activated"
+// button, and the header shows the points balance instead of a log-out link.
+const couponPageHTML = `<!doctype html><html><body><header data-testid="header"><div data-testid="header-auth-info"><div data-testid="header-points-balance"><p>21.053 °P</p></div><button data-testid="header-user-icon"></button></div></header><main id="app">loading…</main><script>
 const pending = %s || [];
 const done = %s || [];
 setTimeout(() => {
