@@ -17,9 +17,12 @@ package activator
 // are therefore not counted as pending. An activated coupon disappears
 // from the not-activated section.
 //
-// The logged-in header shows an "Abmelden" (log out) link. A coupon page
-// without it is treated as logged out, so an expired session can never be
-// mistaken for "nothing pending". The exact logged-out page is not
+// Since 2026-11-10 the logged-in header shows the points balance
+// (div[data-testid="header-points-balance"] "21.053 °P") next to a user
+// icon. The "Abmelden" (log out) link is only rendered after a click on
+// that icon; it is still accepted in case it comes back. A coupon page
+// without either is treated as logged out, so an expired session can
+// never be mistaken for "nothing pending". The exact logged-out page is not
 // verified; it is also detected via a login URL, a visible password field
 // or a login iframe.
 
@@ -76,8 +79,10 @@ const inspectJS = `(() => {` + helpersJS + `
     text.includes("incapsula incident");
   if (challenge) return {state: "challenge", pending: 0};
 
-  const loggedIn = Array.from(document.querySelectorAll("a, button"))
-    .some((e) => /abmelden|logout/i.test((e.innerText || "") + " " + (e.getAttribute("href") || "")));
+  const balance = q('[data-testid="header-points-balance"]');
+  const loggedIn = (balance && /\d/.test(balance.innerText || "")) ||
+    Array.from(document.querySelectorAll("a, button"))
+      .some((e) => /abmelden|logout/i.test((e.innerText || "") + " " + (e.getAttribute("href") || "")));
   if (q(SECTION) && loggedIn) return {state: "coupons", pending: pendingItems().length};
 
   const loginPath = ["/login", "/anmelden", "/authenticate", "/signin"].some((p) => path.includes(p));
