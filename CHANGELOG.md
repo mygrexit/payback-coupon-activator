@@ -6,6 +6,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-10
+
 ### Fixed
 
 - Every run failed with "session missing or expired" since payback.de's header redesign on 2026-11-10. The header no longer shows an "Abmelden" link, so a logged-in session is now detected by the points balance.
@@ -41,7 +43,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
 - Notifications through shoutrrr when the session expires, a bot check appears, the page layout changes or coupons can't be activated.
 - Docker image for amd64 and arm64, published to `ghcr.io/mygrexit/payback-coupon-activator`.
 
-[Unreleased]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mygrexit/payback-coupon-activator/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mygrexit/payback-coupon-activator/releases/tag/v0.1.0
